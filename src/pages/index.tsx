@@ -1,28 +1,43 @@
 import { useEffect, useState } from "react";
+import Nav from "@/components/Nav";
 
-interface IHighScore {
+export interface IHighScore {
   _id: string;
   user: string;
   score: number;
 }
 
-function useFetch(url: string) {
-  const [data, setData] = useState<IHighScore[] | null>(null);
-  const [error, setError] = useState<Error | null>(null);
+async function fetchData(url: string) {
+  const resp = await fetch(url);
+  const { data, error } = await resp.json();
+  if (!resp.ok) throw error;
+  return data;
+}
+
+function useFetch<T>(url: string) {
+  const [data, setData] = useState<T | null>(null);
+  const [error, setError] = useState<object | string | null>(null);
 
   useEffect(() => {
     let ignore = false;
-    fetch(url)
-      .then((resp) => resp.json())
-      .then(({ highScores }) => {
-        if (!ignore) setData(highScores);
-      })
-      .catch((e) => setError(e));
+    async function fetchData() {
+      try {
+        const resp = await fetch(url);
+        const { data, error } = await resp.json();
+        if (!resp.ok) throw error;
+        if (!ignore) setData(data);
+      } catch (error) {
+        if (typeof error === "object" || typeof error === "string") {
+          setError(error);
+        }
+      }
+    }
+    fetchData();
 
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [url]);
 
   return {
     data,
@@ -30,20 +45,33 @@ function useFetch(url: string) {
   };
 }
 
-const loading = <h1>Loading...</h1>;
-
 export default function Home() {
-  const { data, error } = useFetch("http://localhost:3000/api/high-scores");
+  const { data, error } = useFetch<IHighScore[]>(
+    "http://localhost:3000/api/high-scores"
+  );
+
+  const loadingMsg = <h1>Loading...</h1>;
+  const errorMsg = (
+    <h1>Something bad happened on the network, check logs for more info!</h1>
+  );
+  const body = (
+    <>
+      <h1 className="text-3xl">index page</h1>
+      {
+        <ul className="border space-y-2 p-5">
+          {data?.map((score) => (
+            <li key={score._id}>{score.score}</li>
+          ))}
+        </ul>
+      }
+    </>
+  );
 
   return (
     <>
+      <Nav />
       <main className="flex flex-col justify-center items-center min-h-screen">
-        <h1 className="text-3xl">index page</h1>
-        <ul className="border space-y-2 p-5">
-          {data
-            ? data.map((score) => <li key={score._id}>{score.score}</li>)
-            : loading}
-        </ul>
+        {error ? errorMsg : !data ? loadingMsg : body}
       </main>
     </>
   );

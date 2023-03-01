@@ -1,5 +1,4 @@
 import "@/styles/globals.css";
-import Nav from "@/components/Nav";
 import { Roboto } from "@next/font/google";
 import type { AppProps } from "next/app";
 import Head from "next/head";
@@ -15,7 +14,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <title>Portfolio site</title>
+        <title>Space Game</title>
         <meta name="description" content="Portfolio site for John O'Connor" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -23,7 +22,6 @@ export default function App({ Component, pageProps }: AppProps) {
       <div
         className={`${roboto.variable} font-sans text-neutral-200 min-h-screen bg-slate-900 `}
       >
-        <Nav />
         <Component {...pageProps} />
       </div>
     </>

@@ -1,9 +1,14 @@
 import mongoose from "mongoose";
 
-/* PetSchema will correspond to a collection in your MongoDB database. */
 const HighScoreSchema = new mongoose.Schema({
-  user: String,
-  score: Number,
+  user: {
+    type: String,
+    required: [true, "Please provide a user."],
+  },
+  score: {
+    type: Number,
+    required: [true, "Please provide a score."],
+  },
 });
 
 export default mongoose.models.HighScore ||

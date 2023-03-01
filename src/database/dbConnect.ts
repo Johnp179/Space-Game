@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
@@ -10,7 +9,12 @@ if (!MONGODB_URI) {
 
 async function dbConnect() {
   if (mongoose.connection.readyState) return;
-  await mongoose.connect(MONGODB_URI!);
+  try {
+    await mongoose.connect(MONGODB_URI!);
+    console.log("Connected to MongoDb");
+  } catch (e) {
+    throw e;
+  }
 }
 
 export default dbConnect;

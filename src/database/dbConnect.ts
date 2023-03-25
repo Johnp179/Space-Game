@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_LOCAL_URI;
 
 if (!MONGODB_URI) {
   throw new Error(
@@ -7,14 +7,13 @@ if (!MONGODB_URI) {
   );
 }
 
-async function dbConnect() {
+function dbConnect() {
   if (mongoose.connection.readyState) return;
-  try {
-    await mongoose.connect(MONGODB_URI!);
-    console.log("Connected to MongoDb");
-  } catch (e) {
-    throw e;
-  }
+
+  mongoose
+    .connect(MONGODB_URI!)
+    .then(() => console.log("Connected to MongoDb"))
+    .catch(console.log);
 }
 
 export default dbConnect;

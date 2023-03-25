@@ -6,9 +6,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  dbConnect().catch((_) => {
-    res.status(500).json({ error: "Unable to connect to MongoDb" });
-  });
+  dbConnect();
 
   switch (req.method) {
     case "GET":
@@ -20,17 +18,35 @@ export default async function handler(
   }
 }
 
-async function getComments(req: NextApiRequest, res: NextApiResponse) {
-  const comments = await Comment.find({});
-  res.json({ data: comments });
+async function getComments(_: NextApiRequest, res: NextApiResponse) {
+  try {
+    throw new Error("bad things");
+    const comments = await Comment.find({}, null, { maxTimeMS: 5000 });
+    res.json({ data: comments });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
 
 async function addComment(req: NextApiRequest, res: NextApiResponse) {
   try {
+    // await wait();
+    // throw new Error("this is and artificial error that i just added for funz!");
     const comment = new Comment(req.body);
     await comment.save();
     res.json({ data: comment });
   } catch (error) {
-    res.status(400).json({ error });
+    if (error instanceof Error) {
+      if (error.name === "ValidationError") {
+        return res.status(400).json({ error: error.message });
+      }
+      res.status(500).json({ error: error.message });
+    }
   }
+}
+
+function wait() {
+  return new Promise((resolve) => setTimeout(resolve, 2000));
 }

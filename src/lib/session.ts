@@ -1,6 +1,6 @@
 import type { IronSessionOptions } from "iron-session";
 
-interface User {
+export interface IUser {
   username: string;
   email: string;
 }
@@ -19,6 +19,6 @@ export const sessionOptions: IronSessionOptions = {
 
 declare module "iron-session" {
   interface IronSessionData {
-    user?: User;
+    user?: IUser;
   }
 }

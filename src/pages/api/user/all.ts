@@ -3,12 +3,10 @@ import User from "@/database/models/User";
 import dbConnect from "@/database/dbConnect";
 
 export default async function getUsers(
-  req: NextApiRequest,
+  _: NextApiRequest,
   res: NextApiResponse
 ) {
-  dbConnect().catch((_) => {
-    res.status(500).json({ error: "Unable to connect to MongoDb" });
-  });
+  dbConnect();
 
   const users = await User.find({});
   res.json({ data: users });

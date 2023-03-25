@@ -1,17 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import NotFoundError from "@/lib/NotFoundError";
 import Comment from "@/database/models/Comment";
 import dbConnect from "@/database/dbConnect";
+import manageError from "@/lib/manageApiError";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  dbConnect().catch((_) => {
-    res.status(500).json({ error: "Unable to connect to MongoDb" });
-  });
+  dbConnect();
 
   const { id } = req.query;
-
   if (typeof id === "string") {
     switch (req.method) {
       case "GET":
@@ -33,12 +32,10 @@ async function getComment(
 ) {
   try {
     const comment = await Comment.findById(id);
-    if (!comment) throw new Error("Comment not found");
+    if (!comment) throw new NotFoundError("Comment not found");
     res.json({ data: comment });
   } catch (error) {
-    if (error instanceof Error) {
-      res.status(404).json({ error: error.message });
-    }
+    manageError(error, res);
   }
 }
 
@@ -51,27 +48,23 @@ async function updateComment(
     const updatedComment = await Comment.findByIdAndUpdate(id, req.body, {
       new: true,
     });
-    if (!updatedComment) throw new Error("Comment not found");
+    if (!updatedComment) throw new NotFoundError("Comment not found");
     res.json({ data: updatedComment });
   } catch (error) {
-    if (error instanceof Error) {
-      res.status(404).json({ error: error.message });
-    }
+    manageError(error, res);
   }
 }
 
 async function deleteComment(
-  req: NextApiRequest,
+  _: NextApiRequest,
   res: NextApiResponse,
   id: string
 ) {
   try {
     const deletedComment = await Comment.findByIdAndDelete(id);
     if (!deletedComment) throw new Error("Comment not found");
-    res.status(200).json({ data: deletedComment });
+    res.json({ data: deletedComment });
   } catch (error) {
-    if (error instanceof Error) {
-      res.status(404).json({ error: error.message });
-    }
+    manageError(error, res);
   }
 }

@@ -5,19 +5,28 @@ import { withIronSessionApiRoute } from "iron-session/next";
 import { sessionOptions } from "@/lib/session";
 import bcrypt from "bcrypt";
 
-interface RegisterError {
+class RegisterError extends Error {
+  name = "RegisterError";
+  username: boolean;
+  email: boolean;
+  constructor(msg: string, username = false, email = false) {
+    super(msg);
+    this.username = username;
+    this.email = email;
+  }
+}
+
+export interface IRegisterError {
   username: boolean;
   email: boolean;
 }
 
 async function register(req: NextApiRequest, res: NextApiResponse) {
-  dbConnect().catch((_) => {
-    res.status(500).json({ error: "Unable to connect to MongoDb" });
-  });
+  dbConnect();
 
   const { username, email, password } = req.body;
 
-  const error: RegisterError = {
+  const error: IRegisterError = {
     username: false,
     email: false,
   };
@@ -42,13 +51,13 @@ async function register(req: NextApiRequest, res: NextApiResponse) {
     };
     await req.session.save();
     res.json(req.session.user);
-  } catch (error: any) {
-    if ("username" in error && "email" in error) {
-      res
-        .status(401)
-        .json({ error: "That username or password already exists" });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error instanceof Error) {
+        return res.status(500).json({ error: error.message });
+      }
+      res.status(401).json({ error });
     }
-    res.status(400).json({ error });
   }
 }
 

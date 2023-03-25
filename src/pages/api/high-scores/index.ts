@@ -8,9 +8,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  dbConnect().catch((_) => {
-    res.status(500).json({ error: "Unable to connect to MongoDb" });
-  });
+  dbConnect();
 
   switch (req.method) {
     case "GET":
@@ -23,14 +21,19 @@ export default async function handler(
 }
 
 async function getHighScores(req: NextApiRequest, res: NextApiResponse) {
-  const highScores = await HighScore.find({}, null, { sort: { score: -1 } });
-  res.json({ data: highScores });
+  try {
+    const highScores = await HighScore.find({}, null, { sort: { score: -1 } });
+    res.json({ data: highScores });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
 
 async function postHighScore(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { user1, score } = req.body;
-
+    const { user, score } = req.body;
     const highScores = await HighScore.find({}, null, {
       sort: { score: -1 },
     });
@@ -43,7 +46,7 @@ async function postHighScore(req: NextApiRequest, res: NextApiResponse) {
       return res.json({ added: true });
     }
     if (score > lowestScore.score) {
-      lowestScore.user = user1;
+      lowestScore.user = user;
       lowestScore.score = score;
       await lowestScore.save();
       return res.json({ added: true });
@@ -51,6 +54,11 @@ async function postHighScore(req: NextApiRequest, res: NextApiResponse) {
 
     res.json({ added: false });
   } catch (error) {
-    res.status(400).json({ error });
+    if (error instanceof Error) {
+      if (error.name === "ValidationError") {
+        return res.status(400).json({ error: error.message });
+      }
+      res.status(500).json({ error: error.message });
+    }
   }
 }

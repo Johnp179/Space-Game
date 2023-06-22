@@ -17,6 +17,7 @@ export default function Profile({
               type="text"
               className="rounded-sm text-black"
               value={user?.username}
+              readOnly
             />
           </label>
           <label className="block">
@@ -25,6 +26,7 @@ export default function Profile({
               type="email"
               className="rounded-sm text-black"
               value={user?.email}
+              readOnly
             />
           </label>
         </form>

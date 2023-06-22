@@ -2,7 +2,7 @@ import "@/styles/globals.css";
 import { Roboto } from "@next/font/google";
 import type { AppProps } from "next/app";
 import Head from "next/head";
-import { Component } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 
 const roboto = Roboto({
   weight: ["400", "700"],
@@ -11,41 +11,26 @@ const roboto = Roboto({
   variable: "--font-roboto",
 });
 
-export class ErrorBoundary extends Component<any> {
-  state: { hasError: boolean };
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error: any) {
-    // Update state so the next render will show the fallback UI.
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: any, info: any) {
-    // Example "componentStack":
-    //   in ComponentThatThrows (created by App)
-    //   in ErrorBoundary (created by App)
-    //   in div (created by App)
-    //   in App
-    // console.error(error, info.componentStack);
-    console.error(info.componentStack);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      // You can render any custom fallback UI
-      return this.props.fallback;
-    }
-
-    return this.props.children;
-  }
+function ErrorFallback({
+  resetErrorBoundary,
+}: {
+  resetErrorBoundary: () => void;
+}) {
+  return (
+    <div className="min-h-screen flex flex-col gap-3 justify-center items-center">
+      <h1 className="text-3xl font-bold">
+        Oh dear, it appears something bad has happened!
+      </h1>
+      <h3 className="text-xl">Click the button below to attempt to reload.</h3>
+      <button
+        className="border rounded-md p-2 uppercase hover:bg-neutral-200 hover:text-black"
+        onClick={resetErrorBoundary}
+      >
+        Reload
+      </button>
+    </div>
+  );
 }
-
-// <ErrorBoundary fallback={<h1>This is the error message</h1>}>
-// <Component {...pageProps} />
-// </ErrorBoundary>
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -59,7 +44,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <div
         className={`${roboto.variable} font-sans text-neutral-200 bg-slate-800 relative`}
       >
-        <ErrorBoundary fallback={<h1>This is the error message</h1>}>
+        <ErrorBoundary FallbackComponent={ErrorFallback}>
           <Component {...pageProps} />
         </ErrorBoundary>
       </div>

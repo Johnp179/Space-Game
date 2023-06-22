@@ -1,4 +1,11 @@
 import mongoose from "mongoose";
+export interface DBUser {
+  username: string;
+  email: string;
+  password: string;
+  loginAttempts: string;
+  startTime: number;
+}
 
 const UserSchema = new mongoose.Schema({
   username: {

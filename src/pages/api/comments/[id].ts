@@ -1,14 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import NotFoundError from "@/lib/NotFoundError";
-import Comment from "@/database/models/Comment";
-import dbConnect from "@/database/dbConnect";
-import manageError from "@/lib/manageApiError";
+import Comment, { IComment } from "@/database/models/Comment";
+import { connectDB } from "@/database/dbConnect";
 
-export default async function handler(
+export default async function getAndAlterComments(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  dbConnect();
+  connectDB();
 
   const { id } = req.query;
   if (typeof id === "string") {
@@ -22,49 +21,85 @@ export default async function handler(
       default:
         res.status(405).end();
     }
+  } else {
+    console.log("ID is not a string");
+    res.status(400).end();
   }
 }
 
 async function getComment(
   req: NextApiRequest,
-  res: NextApiResponse,
+  res: NextApiResponse<IComment>,
   id: string
 ) {
   try {
     const comment = await Comment.findById(id);
-    if (!comment) throw new NotFoundError("Comment not found");
-    res.json({ data: comment });
+    if (!comment) {
+      throw new NotFoundError(
+        "Document corresponding to that ID does not exist"
+      );
+    }
+    res.json(comment);
   } catch (error) {
-    manageError(error, res);
+    console.error(error);
+    if (
+      error instanceof Error &&
+      (error.name === "CastError" || error.name === "NotFoundError")
+    ) {
+      return res.status(400).end();
+    }
+    res.status(500).end();
   }
 }
 
 async function updateComment(
   req: NextApiRequest,
-  res: NextApiResponse,
+  res: NextApiResponse<string>,
   id: string
 ) {
   try {
     const updatedComment = await Comment.findByIdAndUpdate(id, req.body, {
       new: true,
     });
-    if (!updatedComment) throw new NotFoundError("Comment not found");
-    res.json({ data: updatedComment });
+    if (!updatedComment) {
+      throw new NotFoundError(
+        "Document corresponding to that ID does not exist"
+      );
+    }
+    res.json(`Document updated`);
   } catch (error) {
-    manageError(error, res);
+    console.error(error);
+    if (
+      error instanceof Error &&
+      (error.name === "CastError" || error.name === "NotFoundError")
+    ) {
+      return res.status(400).end();
+    }
+    res.status(500).end();
   }
 }
 
 async function deleteComment(
   _: NextApiRequest,
-  res: NextApiResponse,
+  res: NextApiResponse<string>,
   id: string
 ) {
   try {
     const deletedComment = await Comment.findByIdAndDelete(id);
-    if (!deletedComment) throw new Error("Comment not found");
-    res.json({ data: deletedComment });
+    if (!deletedComment) {
+      throw new NotFoundError(
+        "Document corresponding to that ID does not exist"
+      );
+    }
+    res.json("Document deleted");
   } catch (error) {
-    manageError(error, res);
+    console.error(error);
+    if (
+      error instanceof Error &&
+      (error.name === "CastError" || error.name === "NotFoundError")
+    ) {
+      return res.status(400).end();
+    }
+    res.status(500).end();
   }
 }

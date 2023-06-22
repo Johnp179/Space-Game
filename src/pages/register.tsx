@@ -2,9 +2,10 @@ import Nav from "@/components/Nav";
 import { useState, useRef, useEffect, FormEvent } from "react";
 import { useRouter } from "next/router";
 import { z } from "zod";
-import { IRegisterError } from "./api/user/register";
+import { RegisterError } from "./api/user/register";
 import { withIronSessionSsr } from "iron-session/next";
 import { sessionOptions } from "@/lib/session";
+import { postRequest } from "@/lib/apiRequests";
 
 const usernameErrorMsg = "Minimum of 5 characters";
 const passwordErrorMsg = {
@@ -12,10 +13,12 @@ const passwordErrorMsg = {
   letter: "Must include a lowercase letter",
   number: "Must include a number",
 };
+
 const confirmPasswordErrorMsg = "Passwords must match";
 
 export default function Register() {
   const router = useRouter();
+  const [networkError, setNetworkError] = useState(false);
   const [usernameClientError, setUsernameClientError] =
     useState(usernameErrorMsg);
   const [emailClientError, setEmailClientError] = useState("");
@@ -25,7 +28,7 @@ export default function Register() {
     passwordErrorMsg.number,
   ]);
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
-  const [serverError, setServerError] = useState<IRegisterError>({
+  const [serverError, setServerError] = useState<RegisterError>({
     username: false,
     email: false,
   });
@@ -99,25 +102,22 @@ export default function Register() {
         password: passwordRef.current?.value,
       };
 
-      const resp = await fetch(`/api/user/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newUser),
-      });
-
-      if (!resp.ok) {
-        const { error } = await resp.json();
-        if (resp.status === 500) {
-          return console.error(error);
+      try {
+        await postRequest("/api/user/register", newUser);
+        router.push("/profile");
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error(error);
+          setNetworkError(true);
         }
-        return setServerError(error);
-      }
 
-      router.push("/profile");
+        setServerError(error as any);
+      }
     }
   }
+
+  if (networkError)
+    return <div>A network error occurred, please reload the page</div>;
 
   return (
     <>

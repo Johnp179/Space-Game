@@ -1,19 +1,20 @@
 import mongoose from "mongoose";
-const MONGODB_URI = process.env.MONGODB_LOCAL_URI;
+
+const MONGODB_URI =
+  process.env.NODE_ENV === "test"
+    ? globalThis.__MONGO_URI__
+    : process.env.MONGODB_ATLAS_URI;
 
 if (!MONGODB_URI) {
-  throw new Error(
-    "Please define the MONGODB_URI environment variable inside .env.local"
-  );
+  throw new Error("Please define the MONGODB_URI environment variable.");
 }
 
-function dbConnect() {
+export async function connectDB() {
   if (mongoose.connection.readyState) return;
-
-  mongoose
-    .connect(MONGODB_URI!)
-    .then(() => console.log("Connected to MongoDb"))
-    .catch(console.log);
+  await mongoose.connect(MONGODB_URI!);
+  console.log(`Connected to mongoDb`);
 }
 
-export default dbConnect;
+export async function disconnectDB() {
+  await mongoose.connection.close();
+}

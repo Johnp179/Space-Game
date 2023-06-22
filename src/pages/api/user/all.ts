@@ -1,13 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import User from "@/database/models/User";
-import dbConnect from "@/database/dbConnect";
+import User, { DBUser } from "@/database/models/User";
+import { connectDB } from "@/database/dbConnect";
 
 export default async function getUsers(
-  _: NextApiRequest,
-  res: NextApiResponse
+  req: NextApiRequest,
+  res: NextApiResponse<DBUser[]>
 ) {
-  dbConnect();
-
+  if (req.method !== "GET") {
+    return res.status(405).end();
+  }
+  connectDB();
   const users = await User.find({});
-  res.json({ data: users });
+  res.json(users);
 }

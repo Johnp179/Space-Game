@@ -10,7 +10,7 @@ export default function Nav({
   setUser?: (user: IUser | null) => void;
 }) {
   return (
-    <nav className="fixed w-full uppercase flex justify-between text-2xl ">
+    <nav className="fixed w-full py-4 uppercase flex justify-between text-3xl bg-inherit">
       <div className="flex gap-1 ml-2">
         <Link href="/" className="relative nav-link p-2">
           Game

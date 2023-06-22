@@ -1,23 +1,31 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import User from "@/database/models/User";
-import dbConnect from "@/database/dbConnect";
+import { connectDB } from "@/database/dbConnect";
 import { withIronSessionApiRoute } from "iron-session/next";
-import { sessionOptions } from "@/lib/session";
+import { IUser, sessionOptions } from "@/lib/session";
 import bcrypt from "bcrypt";
 
-const waitInterval = 1 * 60 * 1000; // 1 minute
-export interface ILoginError {
+export interface LoginError {
   email: boolean;
   password: boolean;
   attempts: boolean;
   timeTillReset: number;
 }
 
-async function login(req: NextApiRequest, res: NextApiResponse) {
-  dbConnect();
+const waitInterval = 1 * 60 * 1000; // 1 minute
+export const maxAttempts = 5;
+
+async function login(
+  req: NextApiRequest,
+  res: NextApiResponse<{ user: IUser } | { error: LoginError }>
+) {
+  if (req.method !== "POST") {
+    return res.status(405).end();
+  }
+  connectDB();
 
   const { email, password } = req.body;
-  const error: ILoginError = {
+  const error: LoginError = {
     email: false,
     password: false,
     attempts: false,
@@ -38,7 +46,7 @@ async function login(req: NextApiRequest, res: NextApiResponse) {
 
     error.timeTillReset = (waitInterval - (Date.now() - user.startTime)) / 1000;
 
-    if (user.loginAttempts >= 5) {
+    if (user.loginAttempts >= maxAttempts) {
       error.attempts = true;
       throw error;
     }
@@ -58,9 +66,10 @@ async function login(req: NextApiRequest, res: NextApiResponse) {
     res.json({ user: req.session.user });
   } catch (error) {
     if (error instanceof Error) {
-      return res.status(500).json({ error: error.message });
+      console.error(error);
+      return res.status(500).end();
     }
-    res.status(401).json({ error });
+    res.status(401).json({ error: error as LoginError });
   }
 }
 

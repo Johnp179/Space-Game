@@ -1,15 +1,17 @@
 import { z } from "zod";
 import Nav from "@/components/Nav";
 import { FormEvent, useState, useRef } from "react";
-import { ILoginError } from "./api/user/login";
+import { LoginError } from "./api/user/login";
 import { useRouter } from "next/router";
 import { withIronSessionSsr } from "iron-session/next";
 import { sessionOptions } from "@/lib/session";
+import { postRequest } from "@/lib/apiRequests";
 
 export default function Login() {
   const router = useRouter();
+  const [networkError, setNetworkError] = useState(false);
   const [emailClientError, setEmailClientError] = useState("");
-  const [serverError, setServerError] = useState<ILoginError>({
+  const [serverError, setServerError] = useState<LoginError>({
     email: false,
     password: false,
     attempts: false,
@@ -29,24 +31,17 @@ export default function Login() {
         email: emailRef.current?.value,
         password: passwordRef.current?.value,
       };
-      const resp = await fetch(`/api/user/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(user),
-      });
 
-      if (!resp.ok) {
-        const { error } = await resp.json();
-        console.log(error);
-        if (resp.status === 500) {
-          return console.error(error);
+      try {
+        const { error } = await postRequest("api/user/login", user);
+        if (error) {
+          return setServerError(error as LoginError);
         }
-        return setServerError(error);
+        router.push("/profile");
+      } catch (error) {
+        console.error(error);
+        setNetworkError(true);
       }
-
-      router.push("/profile");
     }
   }
 
@@ -61,6 +56,9 @@ export default function Login() {
       }
     }
   }
+
+  if (networkError)
+    return <div>A network error occurred, please reload the page</div>;
 
   return (
     <>

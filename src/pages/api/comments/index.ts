@@ -1,12 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import Comment from "@/database/models/Comment";
-import dbConnect from "@/database/dbConnect";
+import Comment, { IComment } from "@/database/models/Comment";
+import { connectDB } from "@/database/dbConnect";
 
-export default async function handler(
+export default async function getAndAddComments(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  dbConnect();
+  connectDB();
 
   switch (req.method) {
     case "GET":
@@ -18,35 +18,23 @@ export default async function handler(
   }
 }
 
-async function getComments(_: NextApiRequest, res: NextApiResponse) {
-  try {
-    throw new Error("bad things");
-    const comments = await Comment.find({}, null, { maxTimeMS: 5000 });
-    res.json({ data: comments });
-  } catch (error) {
-    if (error instanceof Error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
+async function getComments(
+  _: NextApiRequest,
+  res: NextApiResponse<IComment[]>
+) {
+  const comments = await Comment.find({});
+  res.json(comments);
 }
 
-async function addComment(req: NextApiRequest, res: NextApiResponse) {
+async function addComment(req: NextApiRequest, res: NextApiResponse<string>) {
   try {
-    // await wait();
-    // throw new Error("this is and artificial error that i just added for funz!");
-    const comment = new Comment(req.body);
-    await comment.save();
-    res.json({ data: comment });
+    await Comment.create(req.body);
+    res.json("Document added");
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.name === "ValidationError") {
-        return res.status(400).json({ error: error.message });
-      }
-      res.status(500).json({ error: error.message });
+    console.error(error);
+    if (error instanceof Error && error.name === "ValidationError") {
+      return res.status(400).end();
     }
+    res.status(500).end();
   }
-}
-
-function wait() {
-  return new Promise((resolve) => setTimeout(resolve, 2000));
 }

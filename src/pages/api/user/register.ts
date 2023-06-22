@@ -1,35 +1,30 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import User from "@/database/models/User";
-import dbConnect from "@/database/dbConnect";
+import { connectDB } from "@/database/dbConnect";
 import { withIronSessionApiRoute } from "iron-session/next";
-import { sessionOptions } from "@/lib/session";
+import { IUser, sessionOptions } from "@/lib/session";
 import bcrypt from "bcrypt";
 
-class RegisterError extends Error {
-  name = "RegisterError";
+export interface RegisterError {
   username: boolean;
   email: boolean;
-  constructor(msg: string, username = false, email = false) {
-    super(msg);
-    this.username = username;
-    this.email = email;
+}
+
+async function register(
+  req: NextApiRequest,
+  res: NextApiResponse<{ user: IUser } | { error: RegisterError }>
+) {
+  if (req.method !== "POST") {
+    return res.status(405).end();
   }
-}
 
-export interface IRegisterError {
-  username: boolean;
-  email: boolean;
-}
-
-async function register(req: NextApiRequest, res: NextApiResponse) {
-  dbConnect();
-
+  connectDB();
   const { username, email, password } = req.body;
-
-  const error: IRegisterError = {
+  const error: RegisterError = {
     username: false,
     email: false,
   };
+
   try {
     let user;
     user = await User.findOne({ email });
@@ -42,22 +37,20 @@ async function register(req: NextApiRequest, res: NextApiResponse) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    user = new User({ ...req.body, password: hashedPassword });
-    await user.save();
+    await User.create({ ...req.body, password: hashedPassword });
 
     req.session.user = {
       username,
       email,
     };
     await req.session.save();
-    res.json(req.session.user);
+    res.json({ user: req.session.user });
   } catch (error) {
     if (error instanceof Error) {
-      if (error instanceof Error) {
-        return res.status(500).json({ error: error.message });
-      }
-      res.status(401).json({ error });
+      console.error(error);
+      return res.status(500).end();
     }
+    res.status(401).json({ error: error as RegisterError });
   }
 }
 

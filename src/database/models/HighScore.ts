@@ -1,10 +1,16 @@
 import mongoose from "mongoose";
+export interface IHighScore {
+  _id: string;
+  username: string;
+  score: number;
+}
 
 const HighScoreSchema = new mongoose.Schema({
-  user: {
+  username: {
     type: String,
-    required: [true, "Please provide a user."],
+    required: [true, "Please provide a username."],
   },
+
   score: {
     type: Number,
     required: [true, "Please provide a score."],

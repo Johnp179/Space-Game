@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* .menu-button{
+  color:#fff;
+  cursor: pointer;
+  font-size:35px;
+  font-weight:bold;
+  font-family: 'Courier New';
+  border: 2px solid #fff;
+  padding:10px;
+  border-radius:4px;
+
+}
+.menu-button:hover{
+  background-color:white;
+  color:black
+} */
+
 @layer components {
   .nav-link::before {
     content: "";
@@ -50,5 +66,13 @@
   .nav-auth:hover::before {
     transform-origin: left;
     transform: scaleX(1);
+  }
+
+  .menu-button {
+    @apply text-4xl w-60 text-center font-bold border p-4 rounded-lg uppercase hover:text-black hover:bg-white;
+  }
+
+  .username-input {
+    @apply w-[50%] p-2 text-black text-4xl;
   }
 }

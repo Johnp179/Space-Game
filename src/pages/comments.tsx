@@ -1,270 +1,328 @@
 import Nav from "@/components/Nav";
-import dbConnect from "@/database/dbConnect";
-import CommentModel from "@/database/models/Comment";
+import { connectDB } from "@/database/dbConnect";
+import CommentModel, { IComment } from "@/database/models/Comment";
 import { InferGetServerSidePropsType } from "next";
-import { FormEvent, useRef, useState } from "react";
+import { MouseEvent, useRef, useState, ReactElement, useEffect } from "react";
+import { useErrorBoundary } from "react-error-boundary";
 import { IUser, sessionOptions } from "@/lib/session";
 import { withIronSessionSsr } from "iron-session/next";
+import { motion, AnimatePresence, Variants } from "framer-motion";
+import { CirclesWithBar } from "react-loader-spinner";
+import {
+  CheckIcon,
+  XCircleIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
+
 import {
   getRequest,
   postRequest,
   deleteRequest,
   updateRequest,
 } from "@/lib/apiRequests";
-import { forEachLeadingCommentRange } from "typescript";
-
-interface IShowModal {
-  unauthorized: boolean;
-  post: boolean;
-  update: boolean;
-  delete: boolean;
-}
-
-interface IComment {
-  _id: string;
-  author: string;
-  content: string;
-}
 
 function Comment({
   _id,
   author,
   content,
   user,
-  showModal,
-  setShowModal,
-  setIdToAlter,
+  openModal,
 }: IComment & {
   user: IUser | null;
-  showModal: IShowModal;
-  setShowModal: (arg: IShowModal) => void;
+  openModal: (method: "delete" | "update", id: string) => void;
   setIdToAlter: (arg: string) => void;
 }) {
-  function openModal(type: "delete" | "update") {
-    if (type === "delete") {
-      setShowModal({
-        ...showModal,
-        delete: true,
-      });
-    } else {
-      setShowModal({
-        ...showModal,
-        delete: true,
-      });
-    }
-    setIdToAlter(_id);
-  }
-
   return (
     <article className="bg-slate-300 text-black p-4 rounded-tl-md rounded-br-md w-64">
       <header className="text-2xl font-bold">{author}</header>
       <div>{content}</div>
-      <footer className="text-right space-x-3">
-        {user?.username === author && <EditButtons openModal={openModal} />}
+      <footer className="flex justify-end gap-2">
+        {user?.username === author && (
+          <EditButtons openModal={openModal} _id={_id} />
+        )}
       </footer>
     </article>
   );
 }
 
 function EditButtons({
+  _id,
   openModal,
 }: {
-  openModal: (type: "delete" | "update") => void;
+  _id: string;
+  openModal: (method: "delete" | "update", _id: string) => void;
 }) {
   return (
     <>
-      <button
-        className="border border-black p-1 rounded-sm hover:bg-black hover:text-slate-300"
-        onClick={() => openModal("update")}
-      >
-        Edit
-      </button>
-      <button
-        className="border border-black p-1 rounded-sm hover:bg-black hover:text-slate-300"
-        onClick={() => openModal("delete")}
-      >
-        Delete
-      </button>
+      <PencilSquareIcon
+        onClick={() => openModal("update", _id)}
+        className="w-7 h-7 border border-black p-1 rounded-md hover:bg-black hover:text-slate-300 cursor-pointer"
+      />
+      <TrashIcon
+        onClick={() => openModal("delete", _id)}
+        className="w-7 h-7 border border-black p-1 rounded-md hover:bg-black hover:text-slate-300 cursor-pointer"
+      />
     </>
   );
 }
 
-function UnauthorizedModal({
-  showModal,
-  setShowModal,
-}: {
-  showModal: IShowModal;
-  setShowModal: (arg: IShowModal) => void;
-}) {
+const modalVariants: Variants = {
+  initial: { y: -200, opacity: 0 },
+  animate: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.5,
+      type: "spring",
+      stiffness: 100,
+    },
+  },
+  exit: {
+    y: 200,
+    opacity: 0,
+    transition: {
+      duration: 0.5,
+    },
+  },
+};
+
+const modalBackgroundVariants: Variants = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: 0.8,
+    transition: {
+      duration: 0.5,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: {
+      duration: 0.5,
+    },
+  },
+};
+
+function ModalBackground({ children }: { children: ReactElement }) {
   return (
-    <div className="absolute bg-neutral-400 rounded-md left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]">
-      <header className="text-right bg-cyan-800 rounded-t-md">
-        <span
-          className="text-3xl cursor-pointer mr-2"
-          onClick={() =>
-            setShowModal({
-              ...showModal,
-              unauthorized: false,
-            })
-          }
-        >
-          &times;
-        </span>
+    <motion.div
+      className={`fixed inset-0 flex h-screen justify-center items-center `}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      <motion.div
+        className="bg-black absolute inset-0 w-full h-full z-0"
+        variants={modalBackgroundVariants}
+      />
+      {children}
+    </motion.div>
+  );
+}
+
+function Loading() {
+  return (
+    <motion.div
+      className="fixed inset-0 flex h-screen justify-center items-center bg-black bg-opacity-80"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <CirclesWithBar
+        height="150"
+        width="150"
+        color="#e2e8f0"
+        wrapperStyle={{}}
+        wrapperClass="z-10"
+        outerCircleColor=""
+        innerCircleColor=""
+        barColor=""
+        ariaLabel="circles-with-bar-loading"
+      />
+    </motion.div>
+  );
+}
+
+function UnauthorizedModal({ closeModal }: { closeModal: () => void }) {
+  return (
+    <ModalBackground>
+      <motion.div
+        variants={modalVariants}
+        className=" bg-neutral-400 rounded-md z-10 text-xl"
+      >
+        <header className="flex p-2 bg-cyan-800 uppercase rounded-t-md ">
+          <div className="flex-1 flex justify-center items-center font-semibold uppercase">
+            unauthorized
+          </div>
+          <XMarkIcon
+            className="w-7 h-7 cursor-pointer"
+            onClick={() => closeModal()}
+          />
+        </header>
+        <div className="p-5 h-36 flex justify-center items-center font-semibold uppercase  ">
+          You must be logged in to perform that operation
+        </div>
+      </motion.div>
+    </ModalBackground>
+  );
+}
+
+function PostForm({
+  closeModal,
+  submit,
+  method,
+}: {
+  closeModal: () => void;
+  submit: (content: string | undefined) => Promise<void>;
+  method: "update" | "post";
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  return (
+    <motion.form variants={modalVariants} className="w-96 h-96 z-10 text-2xl">
+      <header className="flex p-2 bg-cyan-800 uppercase rounded-t-md">
+        <div className="flex-1 flex justify-center items-center font-semibold uppercase">
+          {method}
+        </div>
+        <XMarkIcon
+          className="w-7 h-7 cursor-pointer"
+          onClick={() => closeModal()}
+        />
       </header>
-      <div className="p-5 h-36 flex justify-center items-center font-semibold uppercase">
-        Are you sure you wish to delete this comment?
-      </div>
-    </div>
+      <textarea
+        className="w-full p-3 text-slate-700 resize-none outline-none bg-neutral-200 "
+        rows={4}
+        ref={textareaRef}
+        placeholder="Enter your text here..."
+      />
+      <footer className="p-2 bg-cyan-800 rounded-b-md flex justify-end relative bottom-2">
+        <CheckIcon
+          className="h-8 w-8 border rounded-md hover:bg-white hover:text-black"
+          onClick={() => submit(textareaRef.current?.value)}
+        />
+      </footer>
+    </motion.form>
   );
 }
 
 function DeleteModal({
   idToAlter,
   setLoading,
-  showModal,
-  setShowModal,
+  closeModal,
   getComments,
-  setNetworkError,
 }: {
   idToAlter: string;
   setLoading: (arg: boolean) => void;
-  showModal: IShowModal;
-  setShowModal: (arg: IShowModal) => void;
-  setNetworkError: (arg: boolean) => void;
+  closeModal: () => void;
   getComments: () => Promise<void>;
 }) {
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setShowModal({
-      ...showModal,
-      post: false,
-    });
+  const { showBoundary } = useErrorBoundary();
+
+  async function submit() {
     setLoading(true);
-    const { error } = await deleteRequest(`api/comments/${idToAlter}`);
-    if (error) {
-      console.error(error);
-      return setNetworkError(true);
+    closeModal();
+    try {
+      await deleteRequest(`api/comments/${idToAlter}`);
+      getComments();
+    } catch (error) {
+      showBoundary(error);
     }
-    getComments();
   }
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="absolute bg-neutral-400 rounded-md left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]"
-    >
-      <header className="text-right bg-cyan-800 rounded-t-md">
-        <span
-          className="text-3xl cursor-pointer mr-2"
-          onClick={() =>
-            setShowModal({
-              ...showModal,
-              delete: false,
-            })
-          }
-        >
-          &times;
-        </span>
-      </header>
-      <div className="p-5 h-36 flex justify-center items-center font-semibold uppercase">
-        Are you sure you wish to delete this comment?
-      </div>
-    </form>
+    <ModalBackground>
+      <motion.form
+        variants={modalVariants}
+        className=" bg-neutral-400 rounded-md z-10 text-2xl"
+      >
+        <header className="flex p-2 bg-cyan-800 uppercase rounded-t-md">
+          <div className="flex-1 flex justify-center items-center font-semibold uppercase">
+            delete
+          </div>
+          <XMarkIcon
+            className="w-7 h-7 cursor-pointer "
+            onClick={() => closeModal()}
+          />
+        </header>
+        <div className="p-5 h-36 flex justify-center items-center gap-3 font-semibold uppercase">
+          <div>Are you sure you wish to delete this comment?</div>
+          <div className="flex gap-2">
+            <CheckIcon
+              className="w-7 h-7 border rounded-md hover:bg-black hover:border-black cursor-pointer"
+              onClick={submit}
+            />
+          </div>
+        </div>
+      </motion.form>
+    </ModalBackground>
   );
 }
 
 function UpdateModal({
   idToAlter,
+  closeModal,
   setLoading,
-  showModal,
-  setShowModal,
   getComments,
-  setNetworkError,
 }: {
   idToAlter: string;
   setLoading: (arg: boolean) => void;
-  showModal: IShowModal;
-  setShowModal: (arg: IShowModal) => void;
-  setNetworkError: (arg: boolean) => void;
+  closeModal: () => void;
   getComments: () => Promise<void>;
 }) {
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  const { showBoundary } = useErrorBoundary();
+
+  async function submit(content: string | undefined) {
+    closeModal();
+    setLoading(true);
+    try {
+      await updateRequest(`api/comments/${idToAlter}`, {
+        content,
+      });
+      getComments();
+    } catch (error) {
+      console.error(error);
+      showBoundary(error);
+    }
   }
-  return <form onSubmit={handleSubmit}></form>;
+
+  return (
+    <ModalBackground>
+      <PostForm submit={submit} method="update" closeModal={closeModal} />
+    </ModalBackground>
+  );
 }
 
 function PostModal({
   setLoading,
-  showModal,
-  setShowModal,
+  closeModal,
   getComments,
-  setNetworkError,
   user,
 }: {
   setLoading: (arg: boolean) => void;
-  showModal: IShowModal;
-  setShowModal: (arg: IShowModal) => void;
-  setNetworkError: (arg: boolean) => void;
+  closeModal: () => void;
   getComments: () => Promise<void>;
   user: IUser | null;
 }) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { showBoundary } = useErrorBoundary();
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setShowModal({
-      ...showModal,
-      post: false,
-    });
+  async function submit(content: string | undefined) {
+    closeModal();
     setLoading(true);
-    const { data, error } = await postRequest("api/comments", {
-      author: user?.username,
-      content: textareaRef.current?.value,
-    });
-    if (error) {
-      console.error(error);
-      return setNetworkError(true);
+    try {
+      await postRequest("api/comments", {
+        author: user!.username,
+        content,
+      });
+      getComments();
+    } catch (error) {
+      showBoundary(error);
     }
-    getComments();
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="absolute w-72 left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]"
-    >
-      <header className="flex justify-between bg-cyan-800 rounded-t-md  p-2">
-        <h1 className="flex justify-center items-center font-semibold text-2xl uppercase">
-          New Comment
-        </h1>
-        <span
-          className="text-4xl cursor-pointer "
-          onClick={() =>
-            setShowModal({
-              ...showModal,
-              post: false,
-            })
-          }
-        >
-          &times;
-        </span>
-      </header>
-      <textarea
-        className="w-full p-3 text-slate-700 resize-none outline-none bg-neutral-200 "
-        rows={4}
-        ref={textareaRef}
-      >
-        Enter text here...
-      </textarea>
-      <footer className="text-right p-2 bg-cyan-800 rounded-b-md relative bottom-2">
-        <button
-          className="uppercase border p-1 rounded-md hover:bg-white hover:text-black"
-          type="submit"
-        >
-          Post
-        </button>
-      </footer>
-    </form>
+    <ModalBackground>
+      <PostForm method="post" closeModal={closeModal} submit={submit} />
+    </ModalBackground>
   );
 }
 
@@ -272,8 +330,9 @@ export default function Comments({
   comments: commentsProp,
   user: userProp,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const { showBoundary } = useErrorBoundary();
   const [user, setUser] = useState(userProp);
-  const [comments, setComments] = useState<IComment[]>(commentsProp);
+  const [comments, setComments] = useState(commentsProp);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState({
     unauthorized: false,
@@ -282,12 +341,22 @@ export default function Comments({
     delete: false,
   });
   const [idToAlter, setIdToAlter] = useState("");
-  const [networkError, setNetworkError] = useState(false);
-  const Loading = () => (
-    <h1 className="text-4xl p-3 bg-neutral-500 rounded-lg text-black absolute left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] ">
-      Loading....
-    </h1>
-  );
+
+  function closeModal(method: "delete" | "update" | "post" | "unauthorized") {
+    setShowModal({
+      ...showModal,
+      [method]: false,
+    });
+  }
+
+  function openModal(method: "delete" | "update", _id: string) {
+    setShowModal({
+      ...showModal,
+      [method]: true,
+    });
+
+    setIdToAlter(_id);
+  }
 
   function postButtonClick() {
     if (!user) {
@@ -303,36 +372,27 @@ export default function Comments({
   }
 
   async function getComments() {
-    const { data, error } = await getRequest("api/comments");
-    if (error) return setNetworkError(true);
-
-    setShowModal({
-      ...showModal,
-      post: false,
-      update: false,
-      delete: false,
-    });
-    setLoading(false);
-    setComments(data);
+    try {
+      const comments = await getRequest("api/comments");
+      setLoading(false);
+      setComments(comments);
+    } catch (error) {
+      showBoundary(error);
+    }
   }
-
-  if (networkError)
-    return <div>A network error occurred, please reload the page</div>;
 
   return (
     <>
       <Nav user={user} setUser={setUser} />
-      <main className="flex flex-col items-center min-h-screen">
+      <main className="flex flex-col items-center min-h-screen pt-24 pb-48">
         <>
-          {loading && <Loading />}
-          <div className="space-y-5 mt-12">
+          <div className="space-y-5 ">
             {comments.map((comment) => (
               <Comment
                 key={comment._id}
                 user={user}
                 {...comment}
-                showModal={showModal}
-                setShowModal={setShowModal}
+                openModal={openModal}
                 setIdToAlter={setIdToAlter}
               />
             ))}
@@ -343,42 +403,38 @@ export default function Comments({
           >
             Post Comment
           </button>
-          {showModal.unauthorized && (
-            <UnauthorizedModal
-              showModal={showModal}
-              setShowModal={setShowModal}
-            />
-          )}
-          {showModal.post && (
-            <PostModal
-              showModal={showModal}
-              setShowModal={setShowModal}
-              getComments={getComments}
-              user={user}
-              setNetworkError={setNetworkError}
-              setLoading={setLoading}
-            />
-          )}
-          {showModal.update && (
-            <UpdateModal
-              idToAlter={idToAlter}
-              showModal={showModal}
-              setShowModal={setShowModal}
-              getComments={getComments}
-              setNetworkError={setNetworkError}
-              setLoading={setLoading}
-            />
-          )}
-          {showModal.delete && (
-            <DeleteModal
-              idToAlter={idToAlter}
-              showModal={showModal}
-              setShowModal={setShowModal}
-              getComments={getComments}
-              setNetworkError={setNetworkError}
-              setLoading={setLoading}
-            />
-          )}
+          {loading && <Loading />}
+          <AnimatePresence>
+            {showModal.unauthorized && (
+              <UnauthorizedModal
+                closeModal={() => closeModal("unauthorized")}
+              />
+            )}
+            {showModal.post && (
+              <PostModal
+                closeModal={() => closeModal("post")}
+                getComments={getComments}
+                user={user}
+                setLoading={setLoading}
+              />
+            )}
+            {showModal.update && (
+              <UpdateModal
+                idToAlter={idToAlter}
+                closeModal={() => closeModal("update")}
+                getComments={getComments}
+                setLoading={setLoading}
+              />
+            )}
+            {showModal.delete && (
+              <DeleteModal
+                idToAlter={idToAlter}
+                closeModal={() => closeModal("delete")}
+                getComments={getComments}
+                setLoading={setLoading}
+              />
+            )}
+          </AnimatePresence>
         </>
       </main>
     </>
@@ -386,9 +442,9 @@ export default function Comments({
 }
 
 export const getServerSideProps = withIronSessionSsr(async ({ req }) => {
-  dbConnect();
-  const result = await CommentModel.find({}, null, { maxTimeMS: 10000 });
-  const comments: IComment[] = result.map((doc) => ({
+  connectDB();
+  const results = await CommentModel.find({});
+  const comments: IComment[] = results.map((doc) => ({
     ...doc.toObject(),
     _id: doc._id.toString(),
   }));

@@ -13,6 +13,7 @@ export function generateRandomHighScores() {
 
   for (let i = 0; i < maxScores; i++) {
     scores.push({
+      _id: i + "",
       username: names[getRandomNumber(0, names.length)],
       score: getRandomNumber(100, 500),
     });

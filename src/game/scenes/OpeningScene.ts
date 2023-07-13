@@ -1,3 +1,4 @@
+import Button from "../components/Button";
 export default class OpeningScene extends Phaser.Scene {
   constructor() {
     super("OpeningScene");
@@ -11,30 +12,24 @@ export default class OpeningScene extends Phaser.Scene {
       .image(+this.game.config.width / 2, +this.game.config.height / 2, "stars")
       .setDisplaySize(+this.game.config.width, +this.game.config.height);
 
-    this.add
-      .dom(
-        +this.game.config.width / 2,
-        +this.game.config.height / 2 - 40,
-        "div",
-        null,
-        "start"
-      )
-      .setClassName("menu-button")
-      .addListener("pointerdown")
-      .on("pointerdown", () => this.scene.start("MainScene"));
+    new Button(
+      this,
+      +this.game.config.width / 2,
+      +this.game.config.height / 2 - 40,
+      "start",
+      "menu-button",
+      "pointerdown",
+      () => this.scene.start("MainScene")
+    );
 
-    this.add
-      .dom(
-        +this.game.config.width / 2,
-        +this.game.config.height / 2 + 60,
-        "div",
-        null,
-        "controls"
-      )
-      .setClassName("menu-button")
-      .addListener("pointerdown")
-      .on("pointerdown", () =>
-        this.scene.start("ControlsScene", { from: "OpeningScene" })
-      );
+    new Button(
+      this,
+      +this.game.config.width / 2,
+      +this.game.config.height / 2 + 60,
+      "controls",
+      "menu-button",
+      "pointerdown",
+      () => this.scene.start("ControlsScene", { from: "OpeningScene" })
+    );
   }
 }

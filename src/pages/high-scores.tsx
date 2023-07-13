@@ -1,8 +1,11 @@
-import Nav from "@/components/Nav";
-import { InferGetServerSidePropsType, GetServerSideProps } from "next";
+import RegularNav from "@/components/nav/RegularNav";
+import { InferGetServerSidePropsType } from "next";
 import HighScore from "@/database/models/HighScore";
 import { connectDB } from "@/database/dbConnect";
 import { IHighScore } from "@/database/models/HighScore";
+import { sessionOptions } from "@/lib/session";
+import { withIronSessionSsr } from "iron-session/next";
+import { useState } from "react";
 
 function Row({
   ranking,
@@ -46,10 +49,12 @@ function HighScoreTable({ highScores }: { highScores: IHighScore[] }) {
 
 export default function HighScores({
   highScores,
+  user: userProp,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const [user, setUser] = useState(userProp);
   return (
     <>
-      <Nav />
+      <RegularNav user={user} setUser={setUser} />
       <main className="h-screen flex justify-center items-center ">
         <HighScoreTable highScores={highScores} />
       </main>
@@ -57,30 +62,23 @@ export default function HighScores({
   );
 }
 
-export const getServerSideProps: GetServerSideProps<{
-  highScores: IHighScore[];
-}> = async () => {
+export const getServerSideProps = withIronSessionSsr(async ({ req }) => {
   connectDB();
   const results = await HighScore.find({}, null, {
     sort: { score: -1 },
   });
+
   const highScores: IHighScore[] = results.map((doc) => ({
     ...doc.toObject(),
     _id: doc._id.toString(),
   }));
 
-  // if (error) {
-  //   return {
-  //     redirect: {
-  //       destination: '/',
-  //       permanent: false,
-  //     },
-  //   };
-  // }
+  const { user } = req.session;
 
   return {
     props: {
       highScores,
+      user: user ?? null,
     },
   };
-};
+}, sessionOptions);

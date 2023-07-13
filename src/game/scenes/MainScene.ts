@@ -4,8 +4,8 @@ import Enemy from "../sprites/Enemy";
 export default class MainScene extends Phaser.Scene {
   enemies?: Phaser.Physics.Arcade.Group;
   player?: Player;
-  score = 0;
   pauseButton?: Phaser.GameObjects.DOMElement;
+  score = 0;
   level = 0;
   playerHealth = 0;
 
@@ -35,7 +35,7 @@ export default class MainScene extends Phaser.Scene {
     this.load.image("teleport-icon", "/images/teleportIcon.png");
   }
   create() {
-    this.scene.run("ControlsBar");
+    this.scene.launch("ControlsBar");
     this.input.keyboard?.on("keydown-P", () => {
       this.scene.switch("Pause-Scene");
     });
@@ -53,15 +53,17 @@ export default class MainScene extends Phaser.Scene {
       fontFamily: "Courier New",
     };
 
+    const statusBarItemsYPosition = -120;
+
     this.add.text(
       +this.game.config.width / 2 - 110,
-      -80,
+      statusBarItemsYPosition,
       "SCORE:",
       scoreTextStyle
     );
     const scoreText = this.add.text(
       +this.game.config.width / 2 + 85,
-      -80,
+      statusBarItemsYPosition,
       "" + this.score,
       scoreTextStyle
     );
@@ -82,13 +84,14 @@ export default class MainScene extends Phaser.Scene {
       players,
       playerBeams,
       homingBeams,
-      this.enemies
+      this.enemies,
+      statusBarItemsYPosition
     );
 
     //status-bar camera
     this.cameras
       .add(0, 0, +this.game.config.width, 100)
-      .setScroll(0, -100)
+      .setScroll(0, -150)
       .setBackgroundColor("#262626");
 
     this.cameras.main
@@ -140,7 +143,7 @@ export default class MainScene extends Phaser.Scene {
         pointer.worldY >= 0 &&
         pointer.worldY <= worldHeight
       ) {
-        this.player?.teleport({ x: pointer.worldX, y: pointer.worldY });
+        this.player!.teleport({ x: pointer.worldX, y: pointer.worldY });
       }
     });
   }

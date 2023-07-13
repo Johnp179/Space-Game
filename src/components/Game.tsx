@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { IUser } from "@/lib/session";
 import { useErrorBoundary } from "react-error-boundary";
 import LeaderboardScene from "@/game/scenes/LeaderboardScene";
@@ -8,33 +8,36 @@ import MainScene from "@/game/scenes/MainScene";
 import ControlsScene from "@/game/scenes/ControlsScene";
 import GameOverScene from "@/game/scenes/GameOverScene";
 import OpeningScene from "@/game/scenes/OpeningScene";
+import PauseScene from "@/game/scenes/PauseScene";
 
-export function wait(ms:number) {
+export function wait(ms: number) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
 }
 
-declare global {
-  interface Window {
-    user: IUser | null;
-    showBoundary: (error: any) => void;
-  }
-}
-
 export default function Game({ user }: { user: IUser | null }) {
   const { showBoundary } = useErrorBoundary();
+  const [fullScreen, setFullScreen] = useState(false);
   useEffect(() => {
     window.user = user;
     window.showBoundary = showBoundary;
+    window.setFullScreen = setFullScreen;
     const gameDiv = document.querySelector("#game");
     gameDiv?.addEventListener("contextmenu", (event) => event.preventDefault());
     let game: Phaser.Game | null = null;
-    const config = {
+    const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      width: 1024,
-      height: 900,
-      parent: "game",
+      // width: 1024,
+      // height: 900,
+      scale: {
+        parent: "game",
+        mode: Phaser.Scale.FIT,
+        width: 1024,
+        height: 900,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        fullscreenTarget: "fullscreen-target",
+      },
       physics: {
         default: "arcade",
         arcade: {
@@ -51,6 +54,7 @@ export default function Game({ user }: { user: IUser | null }) {
         LeaderboardScene,
         ControlsBar,
         MainScene,
+        PauseScene,
         ControlsScene,
       ],
     };
@@ -63,6 +67,10 @@ export default function Game({ user }: { user: IUser | null }) {
       );
     };
   }, [user, showBoundary]);
-
-  return <div id="game"></div>;
+  //w-[80%] h-[80%]
+  return (
+    <div className={`${fullScreen ? "h-full w-full" : "h-[80%] w-[80%]"}`}>
+      <div id="game"></div>
+    </div>
+  );
 }

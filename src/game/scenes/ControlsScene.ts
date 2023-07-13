@@ -1,3 +1,5 @@
+import Button from "../components/Button";
+
 export default class ControlsScene extends Phaser.Scene {
   sceneToResume?: string;
 
@@ -5,11 +7,8 @@ export default class ControlsScene extends Phaser.Scene {
     super("ControlsScene");
   }
 
-  init(data?: { from: "OpeningScene" }) {
-    if (data?.from === "OpeningScene") {
-      return (this.sceneToResume = "OpeningScene");
-    }
-    this.sceneToResume = "MainScene";
+  init(data: { from: "OpeningScene" | "MainScene" }) {
+    this.sceneToResume = data.from;
   }
 
   preload() {
@@ -52,24 +51,21 @@ export default class ControlsScene extends Phaser.Scene {
     this.add.text(offsetX, 630, "P: Pause game.", textStyle);
     this.add.text(offsetX, 710, "R: Resume game.", textStyle);
 
-    this.add
-      .dom(
-        +this.game.config.width / 2,
-        800,
-        "div",
-        "font-size:30px;",
-        this.sceneToResume == "OpeningScene"
-          ? "RETURN TO START SCREEN"
-          : "RESUME GAME"
-      )
-      .setClassName("menu-button")
-      .addListener("pointerdown")
-      .on("pointerdown", () => {
+    new Button(
+      this,
+      +this.game.config.width / 2,
+      +this.game.config.height - 100,
+      this.sceneToResume === "OpeningScene" ? "START SCREEN" : "RESUME",
+      "menu-button",
+      "pointerdown",
+      () => {
         if (this.sceneToResume === "OpeningScene")
           return this.scene.start("OpeningScene");
 
-        this.scene.switch("MainScene");
-        this.scene.wake("ControlsBar");
-      });
+        this.scene.stop();
+        this.scene.start("ControlsBar");
+        this.scene.wake("MainScene");
+      }
+    );
   }
 }

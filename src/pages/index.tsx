@@ -1,5 +1,5 @@
 import { useState, Component, useEffect, useRef } from "react";
-import Nav from "@/components/Nav";
+import RegularNav from "@/components/nav/RegularNav";
 import { sessionOptions } from "@/lib/session";
 import { withIronSessionSsr } from "iron-session/next";
 import { InferGetServerSidePropsType } from "next";
@@ -29,11 +29,13 @@ export default function Home({
   user: userProp,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [user, setUser] = useState(userProp);
-
   return (
     <>
-      <Nav user={user} setUser={setUser} />
-      <main className="flex flex-col justify-center items-center min-h-screen">
+      <RegularNav user={user} setUser={setUser} />
+      <main
+        id="fullscreen-target"
+        className="h-screen flex justify-center items-center "
+      >
         <Game user={user} />
       </main>
     </>

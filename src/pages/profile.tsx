@@ -1,6 +1,7 @@
 import { withIronSessionSsr } from "iron-session/next";
 import { sessionOptions } from "@/lib/session";
-import Nav from "@/components/Nav";
+import AuthNav from "@/components/nav/AuthNav";
+import WrapperForm from "@/components/WrapperForm";
 import { InferGetServerSidePropsType } from "next";
 
 export default function Profile({
@@ -8,8 +9,8 @@ export default function Profile({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   return (
     <>
-      <Nav user={user} />
-      <main className="h-screen flex justify-center items-center ">
+      <AuthNav />
+      <WrapperForm>
         <form className="p-7 bg-slate-700 space-y-5 rounded-md">
           <label className="block">
             <span className="block">Username</span>
@@ -30,7 +31,7 @@ export default function Profile({
             />
           </label>
         </form>
-      </main>
+      </WrapperForm>
     </>
   );
 }

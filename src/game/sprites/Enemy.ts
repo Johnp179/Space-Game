@@ -54,11 +54,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   update(time: number, deltaT: number) {
     const targetAngle = Phaser.Math.Angle.BetweenPoints(
       this.getCenter(),
-      this.player?.getCenter()!
+      this.player.getCenter()!
     );
     this.move(targetAngle);
     this.collideWithWorld();
-    // this.generateBeam(targetAngle, deltaT);
+    this.generateBeam(targetAngle, deltaT);
   }
 
   move(targetAngle: number) {

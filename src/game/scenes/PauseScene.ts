@@ -1,6 +1,6 @@
-export default class GameOverScene extends Phaser.Scene {
+export default class PauseScene extends Phaser.Scene {
   constructor() {
-    super("GameOverScene");
+    super("PauseScene");
   }
   create() {
     const textStyle: Phaser.Types.GameObjects.Text.TextStyle = {
@@ -15,9 +15,9 @@ export default class GameOverScene extends Phaser.Scene {
       .text(
         +this.game.config.width / 2,
         +this.game.config.height / 2,
-        "GAME OVER",
+        "GAME PAUSED",
         textStyle
       )
-      .setOrigin(0.5, 0.5);
+      .setOrigin(0.5);
   }
 }

@@ -2,23 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* .menu-button{
-  color:#fff;
-  cursor: pointer;
-  font-size:35px;
-  font-weight:bold;
-  font-family: 'Courier New';
-  border: 2px solid #fff;
-  padding:10px;
-  border-radius:4px;
-
-}
-.menu-button:hover{
-  background-color:white;
-  color:black
-} */
-
 @layer components {
+
   .nav-link::before {
     content: "";
     position: absolute;
@@ -31,7 +16,7 @@
     transition: transform 0.2s linear;
     transform: scaleX(0);
   }
-
+  
   .nav-link::after {
     content: "";
     position: absolute;
@@ -74,5 +59,30 @@
 
   .username-input {
     @apply w-[50%] p-2 text-black text-4xl;
+  }
+
+  .lds-dual-ring {
+    display: inline-block;
+    width: 80px;
+    height: 80px;
+  }
+  .lds-dual-ring:after {
+    content: " ";
+    display: block;
+    width: 64px;
+    height: 64px;
+    margin: 8px;
+    border-radius: 50%;
+    border: 6px solid #fff;
+    border-color: #fff transparent #fff transparent;
+    animation: lds-dual-ring 1.2s linear infinite;
+  }
+  @keyframes lds-dual-ring {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 }

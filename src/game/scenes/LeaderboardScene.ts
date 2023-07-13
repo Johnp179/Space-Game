@@ -1,10 +1,11 @@
 import Phaser from "phaser";
 import { postRequest } from "@/lib/apiRequests";
+import Button from "../components/Button";
 
 export default class LeaderboardScene extends Phaser.Scene {
-  win = true;
-  promptForUsername = true;
-  score = 15;
+  win = false;
+  promptForUsername = false;
+  score = 0;
 
   constructor() {
     super("LeaderboardScene");
@@ -31,7 +32,7 @@ export default class LeaderboardScene extends Phaser.Scene {
       .image(+this.game.config.width / 2, +this.game.config.height / 2, "stars")
       .setDisplaySize(+this.game.config.width, +this.game.config.height);
 
-    const textStyle = {
+    const textStyle: Phaser.Types.GameObjects.Text.TextStyle = {
       fontSize: "40px",
       fontStyle: "bold",
       fontFamily: "Courier New",
@@ -128,22 +129,25 @@ export default class LeaderboardScene extends Phaser.Scene {
       .setOrigin(0.5, 0.5)
       .setVisible(false);
 
-    const playAgain = this.add
-      .dom(
-        +this.game.config.width / 2,
-        !this.promptForUsername
-          ? +this.game.config.height / 2
-          : +this.game.config.height / 2 + 120,
-        "div",
-        "",
-        "play again"
-      )
-      .setClassName("menu-button")
-      .addListener("pointerdown")
-      .on("pointerdown", () => {
+    const playAgain = new Button(
+      this,
+      +this.game.config.width / 2,
+      !this.promptForUsername
+        ? +this.game.config.height / 2
+        : +this.game.config.height / 2 + 120,
+      "play again",
+      "menu-button",
+      "pointerdown",
+      () => {
         this.scene.start("MainScene", { score: 0, level: 1 });
-      })
-      .setVisible(!this.promptForUsername);
+      }
+    ).setVisible(!this.promptForUsername);
+
+    const html = "<div class='lds-dual-ring'></div>";
+    const loadingSpinner = this.add
+      .dom(+this.game.config.width / 2, +this.game.config.height / 2 + 140)
+      .createFromHTML(html)
+      .setVisible(false);
 
     const input = this.add
       .dom(
@@ -155,18 +159,21 @@ export default class LeaderboardScene extends Phaser.Scene {
       .setOrigin(0.5, 0.5)
       .addListener("keydown")
       .on("keydown", async (event: KeyboardEvent) => {
+        if (event.key === " ") {
+          return event.preventDefault();
+        }
+
         usernameError.setVisible(false);
         emptyUsernameError.setVisible(false);
-
-        if (event.key == " ") event.preventDefault();
         const target = event.target as HTMLInputElement;
         const username = target.value;
         if (event.key === "Enter") {
-          target.disabled = true;
           if (!username.length) {
             return emptyUsernameError.setVisible(true);
           }
 
+          target.disabled = true;
+          loadingSpinner.setVisible(true);
           try {
             const { userExists, added } = await postRequest(
               "/api/high-scores/add-when-unauthenticated",
@@ -175,7 +182,7 @@ export default class LeaderboardScene extends Phaser.Scene {
                 score: this.score,
               }
             );
-
+            loadingSpinner.setVisible(false);
             target.disabled = false;
             if (userExists) {
               return usernameError.setVisible(true);

@@ -9,7 +9,7 @@ export default class Cooldown {
   };
   imageX = 0;
   textX = 60;
-  y = -80;
+  y = -140;
   deltaX = 180;
   cooldownRef: { homingBeam: boolean; teleport: boolean };
   cooldownGroup: Cooldown[];

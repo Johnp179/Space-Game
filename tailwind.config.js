@@ -13,8 +13,13 @@ module.exports = {
       fontFamily: () => ({
         sans: ["var(--font-roboto)", ...fontFamily.sans],
       }),
-      backgroundImage: {
-        "home-background": "url('/images/background.svg')",
+      background: {
+        "silly-color": "yellow",
+      },
+      fontSize: {
+        "fluid-s": "clamp(0.7rem, 1vw, 1rem)",
+        "fluid-m": "clamp(1rem, 1.5vw, 1.4rem)",
+        "fluid-l": "clamp(1.5rem, 3vw, 2.7rem)",
       },
     },
   },

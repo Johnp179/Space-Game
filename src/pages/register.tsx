@@ -1,4 +1,5 @@
-import Nav from "@/components/Nav";
+import AuthNav from "@/components/nav/AuthNav";
+import WrapperForm from "@/components/WrapperForm";
 import { useState, useRef, useEffect, FormEvent } from "react";
 import { useRouter } from "next/router";
 import { z } from "zod";
@@ -6,27 +7,26 @@ import { RegisterError } from "./api/user/register";
 import { withIronSessionSsr } from "iron-session/next";
 import { sessionOptions } from "@/lib/session";
 import { postRequest } from "@/lib/apiRequests";
+import { useErrorBoundary } from "react-error-boundary";
+import DnaLoading from "@/components/DnaLoading";
 
 const usernameErrorMsg = "Minimum of 5 characters";
-const passwordErrorMsg = {
-  length: "Minimum of 6 characters",
-  letter: "Must include a lowercase letter",
-  number: "Must include a number",
-};
-
+const passwordErrorMsgs = [
+  "Minimum of 6 characters",
+  "Must include a lowercase letter",
+  "Must include a number",
+];
 const confirmPasswordErrorMsg = "Passwords must match";
 
 export default function Register() {
+  const { showBoundary } = useErrorBoundary();
   const router = useRouter();
-  const [networkError, setNetworkError] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [usernameClientError, setUsernameClientError] =
     useState(usernameErrorMsg);
   const [emailClientError, setEmailClientError] = useState("");
-  const [passwordErrors, setPasswordErrors] = useState<string[]>([
-    passwordErrorMsg.length,
-    passwordErrorMsg.letter,
-    passwordErrorMsg.number,
-  ]);
+  const [passwordErrors, setPasswordErrors] =
+    useState<string[]>(passwordErrorMsgs);
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [serverError, setServerError] = useState<RegisterError>({
     username: false,
@@ -37,29 +37,25 @@ export default function Register() {
   const emailRef = useRef<HTMLInputElement | null>(null);
   const passwordRef = useRef<HTMLInputElement | null>(null);
   const confirmPasswordRef = useRef<HTMLInputElement | null>(null);
-  const errorMsgStyle = `text-xs ${formSubmitted ? "text-red-500" : ""}
-  `;
 
   function checkUsername() {
     const usernameSchema = z.string().min(5, usernameErrorMsg);
     try {
-      usernameSchema.parse(usernameRef.current?.value);
+      usernameSchema.parse(usernameRef.current!.value);
       setUsernameClientError("");
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        setUsernameClientError(error.format()._errors[0]);
-      }
+      setUsernameClientError((error as z.ZodError).format()._errors[0]);
     }
   }
 
   function checkEmail() {
     const emailSchema = z.string().email();
     try {
-      emailSchema.parse(emailRef.current?.value);
+      emailSchema.parse(emailRef.current!.value);
       setEmailClientError("");
     } catch (error) {
       if (error instanceof z.ZodError) {
-        setEmailClientError(error.format()._errors[0]);
+        setEmailClientError((error as z.ZodError).format()._errors[0]);
       }
     }
   }
@@ -67,20 +63,19 @@ export default function Register() {
   function checkPassword() {
     const passwordSchema = z
       .string()
-      .min(6, passwordErrorMsg.length)
-      .regex(/[a-z]/, passwordErrorMsg.letter)
-      .regex(/\d/, passwordErrorMsg.number);
+      .min(6, passwordErrorMsgs[0])
+      .regex(/[a-z]/, passwordErrorMsgs[1])
+      .regex(/\d/, passwordErrorMsgs[2]);
     try {
-      passwordSchema.parse(passwordRef.current?.value);
+      passwordSchema.parse(passwordRef.current!.value);
       setPasswordErrors([]);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        setPasswordErrors(error.format()._errors);
-      }
+      setPasswordErrors((error as z.ZodError).format()._errors);
     }
   }
+
   function checkConfirmPassword() {
-    if (passwordRef.current?.value !== confirmPasswordRef.current?.value) {
+    if (passwordRef.current!.value !== confirmPasswordRef.current!.value) {
       return setConfirmPasswordError(confirmPasswordErrorMsg);
     }
     setConfirmPasswordError("");
@@ -88,6 +83,7 @@ export default function Register() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    checkConfirmPassword();
     setFormSubmitted(true);
 
     if (
@@ -96,33 +92,28 @@ export default function Register() {
       !passwordErrors.length &&
       !confirmPasswordError
     ) {
+      setLoading(true);
       const newUser = {
-        username: usernameRef.current?.value,
-        email: emailRef.current?.value,
-        password: passwordRef.current?.value,
+        username: usernameRef.current!.value,
+        email: emailRef.current!.value,
+        password: passwordRef.current!.value,
       };
 
       try {
-        await postRequest("/api/user/register", newUser);
+        const { error } = await postRequest("/api/user/register", newUser);
+        setLoading(false);
+        if (error) return setServerError(error as RegisterError);
         router.push("/profile");
       } catch (error) {
-        if (error instanceof Error) {
-          console.error(error);
-          setNetworkError(true);
-        }
-
-        setServerError(error as any);
+        showBoundary(error);
       }
     }
   }
 
-  if (networkError)
-    return <div>A network error occurred, please reload the page</div>;
-
   return (
     <>
-      <Nav />
-      <main className="h-screen flex justify-center items-center ">
+      <AuthNav />
+      <WrapperForm>
         <form
           onSubmit={handleSubmit}
           className="p-7 bg-slate-700 space-y-5 rounded-md"
@@ -138,7 +129,11 @@ export default function Register() {
                 checkUsername();
               }}
             />
-            <ul className={`${errorMsgStyle} h-7`}>
+            <ul
+              className={`text-fluid-s ${
+                formSubmitted ? "text-red-500" : ""
+              } h-7`}
+            >
               <li>{usernameClientError}</li>
               <li>{serverError.username && "That username already exists"}</li>
             </ul>
@@ -154,7 +149,11 @@ export default function Register() {
                 checkEmail();
               }}
             />
-            <ul className={`${errorMsgStyle} h-7`}>
+            <ul
+              className={`text-fluid-s ${
+                formSubmitted ? "text-red-500" : ""
+              } h-7`}
+            >
               <li>{emailClientError}</li>
               <li>{serverError.email && "That email already exists"}</li>
             </ul>
@@ -167,7 +166,11 @@ export default function Register() {
               className="rounded-sm text-black"
               onChange={() => checkPassword()}
             />
-            <ul className={`${errorMsgStyle} h-10`}>
+            <ul
+              className={`text-fluid-s ${
+                formSubmitted ? "text-red-500" : ""
+              } h-15`}
+            >
               {passwordErrors.map((error, index) => (
                 <li key={index}>{error}</li>
               ))}
@@ -181,15 +184,25 @@ export default function Register() {
               className="rounded-sm text-black"
               onChange={() => checkConfirmPassword()}
             />
-            <ul className={`${errorMsgStyle} h-7`}>
+            <ul
+              className={`text-fluid-s ${
+                formSubmitted ? "text-red-500" : ""
+              } h-7`}
+            >
               <li>{confirmPasswordError}</li>
             </ul>
           </label>
-          <button className="block mx-auto border py-1 px-2 rounded-sm uppercase hover:bg-neutral-200 hover:text-black">
-            sign in
-          </button>
+          <div className="flex justify-center items-center">
+            {loading ? (
+              <DnaLoading />
+            ) : (
+              <button className="border py-1 px-2 rounded-sm uppercase hover:bg-neutral-200 hover:text-black">
+                register
+              </button>
+            )}
+          </div>
         </form>
-      </main>
+      </WrapperForm>
     </>
   );
 }

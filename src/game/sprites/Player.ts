@@ -5,7 +5,6 @@ import MainScene from "../scenes/MainScene";
 import Enemy from "./Enemy";
 import HomingBeam from "./HomingBeam";
 import { wait } from "@/components/Game";
-import { MotionConfigContext } from "framer-motion";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
   health: number;
@@ -43,7 +42,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     playerGroup: Phaser.Physics.Arcade.Group,
     beamGroup: Phaser.Physics.Arcade.Group,
     homingBeamGroup: Phaser.Physics.Arcade.Group,
-    enemyGroup: Phaser.Physics.Arcade.Group
+    enemyGroup: Phaser.Physics.Arcade.Group,
+    statusBarItemsYPosition: number
   ) {
     super(scene, posX, posY, "player-ship");
     this.health = health;
@@ -66,7 +66,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.healthBar = this.scene.add
       .rectangle(
         +this.scene.game.config.width / 2 + 250,
-        -80,
+        statusBarItemsYPosition,
         this.health * this.healthStep,
         50,
         0x00ff00
@@ -196,7 +196,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       });
       this.scene.scene.stop("GameOverScene");
     } catch (error) {
-      console.error(error);
+      window.showBoundary(error);
     }
   }
   async addHighScoreWhenAuthenticated(username: string, score: number) {
@@ -208,7 +208,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.scene.start("LeaderboardScene", { win: added });
       this.scene.scene.stop("GameOverScene");
     } catch (error) {
-      console.error(error);
+      window.showBoundary(error);
     }
   }
 
@@ -222,8 +222,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.scene.bringToTop("GameOverScene");
       await wait(1000);
       const score = (this.scene as MainScene).score;
+      if (score === 0) {
+        this.scene.scene.start("LeaderboardScene", { win: false });
+        this.scene.scene.stop("GameOverScene");
+        return;
+      }
       if (window.user) {
-        // debugger;
         const { username } = window.user;
         return this.addHighScoreWhenAuthenticated(username, score);
       }

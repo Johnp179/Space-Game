@@ -52,6 +52,7 @@ export default function HighScores({
   user: userProp,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [user, setUser] = useState(userProp);
+
   return (
     <>
       <RegularNav user={user} setUser={setUser} />
@@ -63,7 +64,7 @@ export default function HighScores({
 }
 
 export const getServerSideProps = withIronSessionSsr(async ({ req }) => {
-  connectDB();
+  await connectDB();
   const results = await HighScore.find({}, null, {
     sort: { score: -1 },
   });

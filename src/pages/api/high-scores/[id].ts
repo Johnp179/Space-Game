@@ -1,7 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import HighScore from "@/database/models/HighScore";
+import HighScore, { IHighScore } from "@/database/models/HighScore";
 import { connectDB } from "@/database/dbConnect";
 import NotFoundError from "@/lib/NotFoundError";
+import { z } from "zod";
+
+const Validator = z.object({
+  username: z.string(),
+  score: z.number(),
+});
 
 export default function alterHighScores(
   req: NextApiRequest,
@@ -27,11 +33,12 @@ export default function alterHighScores(
 
 async function updateHighScore(
   req: NextApiRequest,
-  res: NextApiResponse<string>,
+  res: NextApiResponse<IHighScore>,
   id: string
 ) {
   try {
-    const updatedScore = await HighScore.findByIdAndUpdate(id, req.body, {
+    const highScore = Validator.parse(req.body);
+    const updatedScore = await HighScore.findByIdAndUpdate(id, highScore, {
       new: true,
     });
     if (!updatedScore) {
@@ -39,12 +46,13 @@ async function updateHighScore(
         "Document corresponding to that ID does not exist"
       );
     }
-    res.json(`Document updated`);
+    res.json(updatedScore);
   } catch (error) {
     console.error(error);
     if (
-      error instanceof Error &&
-      (error.name === "CastError" || error.name === "NotFoundError")
+      (error instanceof Error &&
+        (error.name === "CastError" || error.name === "NotFoundError")) ||
+      error instanceof z.ZodError
     ) {
       return res.status(400).end();
     }

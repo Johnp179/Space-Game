@@ -4,11 +4,11 @@ import { connectDB } from "@/database/dbConnect";
 
 export const maxScores = 10;
 
-export default function getAndAddHighScores(
+export default async function getAndAddHighScores(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  connectDB();
+  await connectDB();
   switch (req.method) {
     case "GET":
       return getHighScores(req, res);

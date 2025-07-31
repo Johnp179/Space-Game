@@ -9,7 +9,8 @@ export default async function getUsers(
   if (req.method !== "GET") {
     return res.status(405).end();
   }
-  connectDB();
+
+  await connectDB();
   const users = await User.find({});
   res.json(users);
 }

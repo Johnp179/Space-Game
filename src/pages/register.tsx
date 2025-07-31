@@ -169,7 +169,7 @@ export default function Register() {
             <ul
               className={`text-fluid-s ${
                 formSubmitted ? "text-red-500" : ""
-              } h-15`}
+              } h-16`}
             >
               {passwordErrors.map((error, index) => (
                 <li key={index}>{error}</li>

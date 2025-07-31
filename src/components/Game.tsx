@@ -28,8 +28,6 @@ export default function Game({ user }: { user: IUser | null }) {
     let game: Phaser.Game | null = null;
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      // width: 1024,
-      // height: 900,
       scale: {
         parent: "game",
         mode: Phaser.Scale.FIT,
@@ -61,13 +59,13 @@ export default function Game({ user }: { user: IUser | null }) {
     game = new Phaser.Game(config);
 
     return () => {
-      game!.destroy(true, process.env.NODE_ENV === "production");
+      game!.destroy(false);
       gameDiv!.removeEventListener("contextmenu", (event) =>
         event.preventDefault()
       );
     };
   }, [user, showBoundary]);
-  //w-[80%] h-[80%]
+
   return (
     <div className={`${fullScreen ? "h-full w-full" : "h-[80%] w-[80%]"}`}>
       <div id="game"></div>

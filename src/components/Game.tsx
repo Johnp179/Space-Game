@@ -59,7 +59,7 @@ export default function Game({ user }: { user: IUser | null }) {
     game = new Phaser.Game(config);
 
     return () => {
-      game!.destroy(false, false);
+      game!.destroy(true);
       gameDiv!.removeEventListener("contextmenu", (event) =>
         event.preventDefault()
       );

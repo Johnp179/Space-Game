@@ -2,12 +2,14 @@ import Button from "../components/Button";
 
 export default class ControlsScene extends Phaser.Scene {
   sceneToResume?: string;
+  mainScenePaused?: boolean;
 
   constructor() {
     super("ControlsScene");
   }
 
-  init(data: { from: "OpeningScene" | "MainScene" }) {
+  init(data: { from: "OpeningScene" | "MainScene"; paused: boolean }) {
+    this.mainScenePaused = data.paused;
     this.sceneToResume = data.from;
   }
 
@@ -55,16 +57,22 @@ export default class ControlsScene extends Phaser.Scene {
       this,
       +this.game.config.width / 2,
       +this.game.config.height - 100,
-      this.sceneToResume === "OpeningScene" ? "START SCREEN" : "RESUME",
+      "BACK",
       "menu-button",
       "pointerdown",
       () => {
         if (this.sceneToResume === "OpeningScene")
           return this.scene.start("OpeningScene");
 
-        this.scene.stop();
+        // the main scene is running
         this.scene.start("ControlsBar");
-        this.scene.wake("MainScene");
+        if (!this.mainScenePaused) {
+          return this.scene.run("MainScene");
+        }
+
+        this.scene.run("MainScene");
+        this.scene.pause("MainScene");
+        this.scene.run("PauseScene");
       }
     );
   }

@@ -34,13 +34,18 @@ export default class ControlsBar extends Phaser.Scene {
       "menu-button",
       "pointerdown",
       () => {
-        this.scene.start("ControlsScene", { from: "MainScene" });
         if (!this.scene.isPaused("MainScene")) {
+          this.scene.start("ControlsScene", {
+            from: "MainScene",
+            paused: false,
+          });
           return this.scene.sleep("MainScene");
         }
-        this.scene.sleep("PauseScene");
+        // main scene is paused, need to resume it and then sleep to remove from render
+        this.scene.start("ControlsScene", { from: "MainScene", paused: true });
         this.scene.resume("MainScene");
         this.scene.sleep("MainScene");
+        this.scene.sleep("PauseScene");
       }
     );
 

@@ -37,8 +37,8 @@ export default class MainScene extends Phaser.Scene {
   create() {
     this.scene.launch("ControlsBar");
     this.input.keyboard?.on("keydown-P", () => {
-      console.log("hey there");
-      this.scene.switch("Pause-Scene");
+      this.scene.pause("MainScene");
+      this.scene.run("PauseScene");
     });
     const worldWidth = 1920;
     const worldHeight = 1080;

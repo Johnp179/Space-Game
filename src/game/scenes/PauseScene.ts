@@ -8,7 +8,11 @@ export default class PauseScene extends Phaser.Scene {
       fontStyle: "bold",
       fontFamily: "Courier New",
     };
-
+    this.input.keyboard?.on("keydown-R", () => {
+      console.log("you hit the r key");
+      this.scene.sleep("PauseScene");
+      this.scene.resume("MainScene");
+    });
     this.cameras.main.setBackgroundColor({ r: 0, g: 0, b: 0, a: 140 });
 
     this.add

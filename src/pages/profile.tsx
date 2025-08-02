@@ -1,6 +1,7 @@
 import { withIronSessionSsr } from "iron-session/next";
 import { sessionOptions } from "@/lib/session";
 import AuthNav from "@/components/nav/AuthNav";
+import RegularNav from "@/components/nav/RegularNav";
 import WrapperForm from "@/components/WrapperForm";
 import { InferGetServerSidePropsType } from "next";
 

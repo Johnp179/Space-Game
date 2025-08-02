@@ -15,7 +15,7 @@ export default function RegularNav({
   return (
     <WrapperNav>
       <NavLinks />
-      <div className="flex">
+      <div className="flex gap-3">
         {user ? (
           <AuthenticatedMenu setUser={setUser} />
         ) : (

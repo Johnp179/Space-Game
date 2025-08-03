@@ -41,11 +41,8 @@ export default class ControlsBar extends Phaser.Scene {
           });
           return this.scene.sleep("MainScene");
         }
-        // main scene is paused, need to resume it and then sleep to remove from render
         this.scene.start("ControlsScene", { from: "MainScene", paused: true });
-        this.scene.resume("MainScene");
-        this.scene.sleep("MainScene");
-        this.scene.sleep("PauseScene");
+        this.scene.sleep("PauseScene"); // this is to stop the resume key working
       }
     );
 
@@ -88,7 +85,7 @@ export default class ControlsBar extends Phaser.Scene {
     } else {
       this.fullScreenButton!.setText("fullscreen");
     }
-
+    // this is for ESC functionality
     if (this.scale.isFullscreen) {
       window.setFullScreen(true);
     } else {

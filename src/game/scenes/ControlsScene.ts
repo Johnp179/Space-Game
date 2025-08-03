@@ -18,6 +18,7 @@ export default class ControlsScene extends Phaser.Scene {
   }
 
   create() {
+    this.cameras.main.setBackgroundColor({ r: 0, g: 0, b: 0 });
     this.add
       .image(
         +this.game.config.width / 2,
@@ -69,9 +70,6 @@ export default class ControlsScene extends Phaser.Scene {
         if (!this.mainScenePaused) {
           return this.scene.run("MainScene");
         }
-
-        this.scene.run("MainScene");
-        this.scene.pause("MainScene");
         this.scene.run("PauseScene");
       }
     );

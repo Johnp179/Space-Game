@@ -6,11 +6,22 @@ import { getRequest } from "@/lib/apiRequests";
 import { useErrorBoundary } from "react-error-boundary";
 
 export default function AuthNav() {
+  const router = useRouter();
   return (
     <WrapperNav>
       <NavLinks />
       <div className="flex mr-2">
-        <Logout />
+        {router.pathname === "/login" ? (
+          <Link href="/register" className="relative nav-auth p-2">
+            register
+          </Link>
+        ) : router.pathname === "/register" ? (
+          <Link href="/login" className="relative nav-auth p-2">
+            Login
+          </Link>
+        ) : (
+          <Logout />
+        )}
       </div>
     </WrapperNav>
   );
@@ -29,6 +40,13 @@ function Logout() {
     }
   }
 
+  function Login() {
+    return (
+      <Link href="/login" className="relative nav-auth p-2">
+        Login
+      </Link>
+    );
+  }
   return (
     <button className="relative uppercase p-2 nav-auth" onClick={logout}>
       logout
